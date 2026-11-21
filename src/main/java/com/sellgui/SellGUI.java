@@ -15,22 +15,22 @@ public class SellGUI extends JavaPlugin {
 
     private Set<Material> disabledItems;
     private EconomyManager economyManager;
+    private SellMenu sellMenu;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
-
         loadSellSettings();
 
         economyManager = new EconomyManager(this);
+        economyManager.setupEconomy();
 
-        if (economyManager.setupEconomy()) {
-            getLogger().info("Vault economy connected successfully!");
-        } else {
-            getLogger().warning("Vault economy is unavailable!");
-        }
+        sellMenu = new SellMenu(this);
+        getServer().getPluginManager().registerEvents(
+                new SellGUIListener(this, sellMenu), this
+        );
 
-        getLogger().info("SellGUI enabled successfully!");
+        getLogger().info("SellGUI enabled!");
     }
 
     private void loadSellSettings() {
@@ -46,10 +46,10 @@ public class SellGUI extends JavaPlugin {
             return 0.0;
         }
 
-        String itemName = material.name();
+        String name = material.name();
 
-        if (getConfig().contains("prices." + itemName)) {
-            return Math.max(0.0, getConfig().getDouble("prices." + itemName));
+        if (getConfig().contains("prices." + name)) {
+            return Math.max(0.0, getConfig().getDouble("prices." + name));
         }
 
         return Math.max(0.0, getConfig().getDouble("settings.default-price", 1.0));
@@ -71,16 +71,8 @@ public class SellGUI extends JavaPlugin {
     }
 
     @Override
-    public void onDisable() {
-        getLogger().info("SellGUI disabled.");
-    }
-
-    @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-
-        if (!command.getName().equalsIgnoreCase("sellgui")) {
-            return false;
-        }
+        if (!command.getName().equalsIgnoreCase("sellgui")) return false;
 
         if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
             if (!sender.hasPermission("sellgui.admin")) {
@@ -95,17 +87,16 @@ public class SellGUI extends JavaPlugin {
         }
 
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("This command can only be used by players.");
+            sender.sendMessage("Only players can use this command.");
             return true;
         }
 
         if (economyManager == null || !economyManager.isReady()) {
-            player.sendMessage("§cEconomy is not available. Vault and an economy plugin are required.");
+            player.sendMessage("§cVault economy is unavailable!");
             return true;
         }
 
-        player.sendMessage("§aSellGUI economy connected successfully!");
-        player.sendMessage("§7The selling menu is coming in the next step.");
+        sellMenu.open(player);
         return true;
     }
 }
