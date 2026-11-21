@@ -1,0 +1,12 @@
+
+name: SellGUI
+version: 1.0.0
+main: com.sellgui.SellGUI
+api-version: '26.2'
+
+commands:
+  sellgui:
+    description: Opens the SellGUI menu
+    usage: /sellgui
+    aliases:
+      - sell
