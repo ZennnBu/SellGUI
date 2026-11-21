@@ -15,17 +15,22 @@ java {
         languageVersion = JavaLanguageVersion.of(25)
     }
 }
-    
+
 repositories {
     mavenCentral()
 
     maven {
         url = 'https://repo.papermc.io/repository/maven-public/'
     }
+
+    maven {
+        url = 'https://jitpack.io'
+    }
 }
 
 dependencies {
     compileOnly 'io.papermc.paper:paper-api:26.2.build.+'
+    compileOnly 'com.github.MilkBowl:VaultAPI:1.7'
 }
 
 tasks.withType(JavaCompile).configureEach {
