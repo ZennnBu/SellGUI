@@ -33,20 +33,13 @@ public class SellMenu {
         inventory.setItem(13, createItem(
                 Material.GOLD_INGOT,
                 "§6Inventory Sell Value",
-                List.of(
-                        "§7Your items are worth:",
-                        "§a" + plugin.getEconomyManager().format(total),
-                        "§7Prices are configurable in config.yml"
-                )
+                List.of("§7Your items are worth:", "§a" + plugin.getEconomyManager().format(total))
         ));
 
         inventory.setItem(11, createItem(
                 Material.EMERALD,
                 "§aSell All Items",
-                List.of(
-                        "§7Sell all eligible items",
-                        "§eClick to sell your inventory"
-                )
+                List.of("§7Sell all eligible items", "§eClick to sell your inventory")
         ));
 
         inventory.setItem(15, createItem(
@@ -62,16 +55,53 @@ public class SellMenu {
         double total = 0.0;
 
         for (ItemStack item : player.getInventory().getStorageContents()) {
-            if (item == null || item.getType().isAir()) {
-                continue;
-            }
+            if (item == null || item.getType().isAir()) continue;
 
             double price = plugin.getItemPrice(item.getType());
-
             total += price * item.getAmount();
         }
 
         return total * plugin.getConfig().getDouble("settings.sell-multiplier", 1.0);
+    }
+
+    public boolean sellAll(Player player) {
+        double multiplier = plugin.getConfig().getDouble("settings.sell-multiplier", 1.0);
+        double total = 0.0;
+
+        for (ItemStack item : player.getInventory().getStorageContents()) {
+            if (item == null || item.getType().isAir()) continue;
+
+            double price = plugin.getItemPrice(item.getType());
+            if (price > 0.0) {
+                total += price * item.getAmount();
+            }
+        }
+
+        total *= multiplier;
+
+        if (total <= 0.0) {
+            player.sendMessage("§cYou don't have any sellable items!");
+            return false;
+        }
+
+        if (!plugin.getEconomyManager().deposit(player, total)) {
+            player.sendMessage("§cPayment failed. Your items were not removed.");
+            return false;
+        }
+
+        for (int slot = 0; slot < player.getInventory().getStorageContents().length; slot++) {
+            ItemStack item = player.getInventory().getItem(slot);
+
+            if (item == null || item.getType().isAir()) continue;
+
+            if (plugin.getItemPrice(item.getType()) > 0.0) {
+                player.getInventory().setItem(slot, null);
+            }
+        }
+
+        player.sendMessage("§aSold your items for §e"
+                + plugin.getEconomyManager().format(total) + "§a!");
+        return true;
     }
 
     private ItemStack createItem(Material material, String name, List<String> lore) {
