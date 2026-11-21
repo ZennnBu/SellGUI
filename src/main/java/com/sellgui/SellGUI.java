@@ -7,27 +7,36 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.Locale;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class SellGUI extends JavaPlugin {
 
     private Set<Material> disabledItems;
+    private EconomyManager economyManager;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+
         loadSellSettings();
 
+        economyManager = new EconomyManager(this);
+
+        if (economyManager.setupEconomy()) {
+            getLogger().info("Vault economy connected successfully!");
+        } else {
+            getLogger().warning("Vault economy is unavailable!");
+        }
+
         getLogger().info("SellGUI enabled successfully!");
-        getLogger().info("All-material pricing system loaded.");
     }
 
     private void loadSellSettings() {
         disabledItems = getConfig().getStringList("settings.disabled-items")
                 .stream()
-                .map(name -> Material.matchMaterial(name))
+                .map(Material::matchMaterial)
                 .filter(material -> material != null)
                 .collect(Collectors.toSet());
     }
@@ -51,10 +60,14 @@ public class SellGUI extends JavaPlugin {
     }
 
     public Set<Material> getSellableMaterials() {
-        return java.util.Arrays.stream(Material.values())
+        return Arrays.stream(Material.values())
                 .filter(material -> !material.isAir())
                 .filter(this::isSellable)
                 .collect(Collectors.toSet());
+    }
+
+    public EconomyManager getEconomyManager() {
+        return economyManager;
     }
 
     @Override
@@ -86,8 +99,13 @@ public class SellGUI extends JavaPlugin {
             return true;
         }
 
-        player.sendMessage("§aSellGUI pricing system is ready!");
-        player.sendMessage("§7GUI is being developed.");
+        if (economyManager == null || !economyManager.isReady()) {
+            player.sendMessage("§cEconomy is not available. Vault and an economy plugin are required.");
+            return true;
+        }
+
+        player.sendMessage("§aSellGUI economy connected successfully!");
+        player.sendMessage("§7The selling menu is coming in the next step.");
         return true;
     }
 }
